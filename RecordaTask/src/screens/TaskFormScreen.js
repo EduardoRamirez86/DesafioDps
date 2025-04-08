@@ -1,21 +1,39 @@
 // src/screens/TaskFormScreen.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, Platform, TouchableOpacity } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import colors from '../../utils/colors';
 
-export default function TaskFormScreen({ navigation }) {
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState('');
-  const [team, setTeam] = useState('');
-  const [dueDate, setDueDate] = useState(new Date());
+export default function TaskFormScreen({ navigation, route }) {
+  // Si se recibe un task, significa que se está editando
+  const editingTask = route.params && route.params.task;
+
+  const [name, setName] = useState(editingTask ? editingTask.name : '');
+  const [category, setCategory] = useState(editingTask ? editingTask.category : '');
+  const [team, setTeam] = useState(editingTask ? editingTask.team : '');
+  // Se guarda la fecha en formato Date; si se está editando, se parsea la fecha ISO almacenada
+  const [dueDate, setDueDate] = useState(editingTask ? new Date(editingTask.dueDate) : new Date());
   const [showPicker, setShowPicker] = useState(false);
 
-  // Estados para la entrada manual
   const [manualInput, setManualInput] = useState(false);
-  const [manualDate, setManualDate] = useState('');  // Ejemplo: "24/01/2025"
-  const [manualTime, setManualTime] = useState('');  // Ejemplo: "14:30"
+  const [manualDate, setManualDate] = useState('');
+  const [manualTime, setManualTime] = useState('');
+
+  useEffect(() => {
+    // Si se está en modo edición y se quiere usar entrada manual, precargar los datos
+    if (editingTask) {
+      const dt = new Date(editingTask.dueDate);
+      // Prepara strings en formato DD/MM/YYYY y HH:mm
+      const day = ('0' + dt.getDate()).slice(-2);
+      const month = ('0' + (dt.getMonth() + 1)).slice(-2);
+      const year = dt.getFullYear();
+      const hours = ('0' + dt.getHours()).slice(-2);
+      const minutes = ('0' + dt.getMinutes()).slice(-2);
+      setManualDate(`${day}/${month}/${year}`);
+      setManualTime(`${hours}:${minutes}`);
+    }
+  }, [editingTask]);
 
   const onChangeDate = (event, selectedDate) => {
     setShowPicker(Platform.OS === 'ios');
@@ -24,27 +42,23 @@ export default function TaskFormScreen({ navigation }) {
     }
   };
 
-  // Función para alternar entre picker y entrada manual
   const toggleManualInput = () => {
     setManualInput(!manualInput);
   };
 
-  // Función para convertir entradas manuales a objeto Date
   const parseManualDateTime = (dateStr, timeStr) => {
-    // Se espera formato "DD/MM/YYYY" y "HH:mm"
     const dateParts = dateStr.split('/');
     const timeParts = timeStr.split(':');
     if (dateParts.length !== 3 || timeParts.length !== 2) {
       return null;
     }
     const day = parseInt(dateParts[0], 10);
-    const month = parseInt(dateParts[1], 10) - 1; // El mes es 0-indexado
+    const month = parseInt(dateParts[1], 10) - 1;
     const year = parseInt(dateParts[2], 10);
     const hours = parseInt(timeParts[0], 10);
     const minutes = parseInt(timeParts[1], 10);
     
     const parsedDate = new Date(year, month, day, hours, minutes);
-    // Verifica que la fecha resultante sea válida
     if (isNaN(parsedDate.getTime())) {
       return null;
     }
@@ -52,7 +66,6 @@ export default function TaskFormScreen({ navigation }) {
   };
 
   const saveTask = async () => {
-    // Validación básica de campos obligatorios
     if (name.trim() === '' || category.trim() === '') {
       Alert.alert('Error', 'Complete los campos obligatorios');
       return;
@@ -68,19 +81,35 @@ export default function TaskFormScreen({ navigation }) {
       finalDate = parsed;
     }
 
-    // Guardar la fecha en formato ISO para mayor compatibilidad
-    const task = {
-      id: Date.now(), // id simple
-      name,
-      category,
-      team,
-      dueDate: finalDate.toISOString()
-    };
-
     try {
       const storedTasks = await AsyncStorage.getItem('tasks');
-      const tasks = storedTasks ? JSON.parse(storedTasks) : [];
-      tasks.push(task);
+      let tasks = storedTasks ? JSON.parse(storedTasks) : [];
+
+      if (editingTask) {
+        // Actualiza la tarea existente
+        tasks = tasks.map(task => {
+          if (task.id === editingTask.id) {
+            return {
+              ...task,
+              name,
+              category,
+              team,
+              dueDate: finalDate.toISOString()
+            };
+          }
+          return task;
+        });
+      } else {
+        // Crear nueva tarea
+        const newTask = {
+          id: Date.now(),
+          name,
+          category,
+          team,
+          dueDate: finalDate.toISOString()
+        };
+        tasks.push(newTask);
+      }
       await AsyncStorage.setItem('tasks', JSON.stringify(tasks));
       navigation.goBack();
     } catch (error) {
@@ -112,7 +141,6 @@ export default function TaskFormScreen({ navigation }) {
       />
 
       <Text style={styles.label}>Fecha y Hora de Entrega *</Text>
-
       <TouchableOpacity onPress={toggleManualInput} style={styles.toggleButton}>
         <Text style={styles.toggleButtonText}>
           {manualInput ? 'Usar picker nativo' : 'Ingresar fecha/hora manualmente'}

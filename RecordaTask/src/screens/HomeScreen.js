@@ -1,4 +1,4 @@
-// src/screens/HomeScreen.js
+// HomeScreen.js (fragmento)
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,7 +8,6 @@ import colors from '../../utils/colors';
 export default function HomeScreen({ navigation }) {
   const [tasks, setTasks] = useState([]);
 
-  // Recuperar las tareas desde AsyncStorage al iniciar la app
   const loadTasks = async () => {
     try {
       const storedTasks = await AsyncStorage.getItem('tasks');
@@ -27,11 +26,16 @@ export default function HomeScreen({ navigation }) {
     return unsubscribe;
   }, [navigation]);
 
-  // Función para eliminar una tarea
+  // Función para eliminar tarea
   const deleteTask = async (id) => {
     const newTasks = tasks.filter(task => task.id !== id);
     setTasks(newTasks);
     await AsyncStorage.setItem('tasks', JSON.stringify(newTasks));
+  };
+
+  // Función para manejar la edición. Se navega al TaskForm enviando el objeto tarea.
+  const editTask = (task) => {
+    navigation.navigate('TaskForm', { task });
   };
 
   return (
@@ -43,14 +47,18 @@ export default function HomeScreen({ navigation }) {
           data={tasks}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
-            <TaskItem task={item} onDelete={deleteTask} />
+            <TaskItem 
+              task={item} 
+              onDelete={deleteTask}
+              onEdit={editTask} // Pasamos la función de edición
+            />
           )}
         />
       )}
-      {/* Botón flotante para agregar tarea */}
       <TouchableOpacity 
         style={styles.fab}
-        onPress={() => navigation.navigate('TaskForm')}>
+        onPress={() => navigation.navigate('TaskForm')}
+      >
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
     </View>
@@ -58,6 +66,7 @@ export default function HomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  // ... estilos existentes, por ejemplo:
   container: {
     flex: 1,
     backgroundColor: '#E8EAED',

@@ -5,9 +5,9 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 // Importamos nuestros screens
 import LoginScreen from './src/screens/LoginScreen';
+import RegisterScreen from './src/screens/RegisterScreen'; // 👈 IMPORTANTE
 import HomeScreen from './src/screens/HomeScreen';
 import TaskFormScreen from './src/screens/TaskFormScreen';
-// (Si se agrega edición, podría importarse EditTaskScreen)
 
 const Stack = createStackNavigator();
 
@@ -21,19 +21,31 @@ export default function App() {
           component={LoginScreen}
           options={{ headerShown: false }} 
         />
+
+        {/* Screen de registro */}
+        <Stack.Screen 
+          name="Register" 
+          component={RegisterScreen}
+          options={{ title: 'Crear Cuenta' }}
+        />
+
         {/* Screen principal con la lista de actividades */}
         <Stack.Screen 
           name="Home" 
           component={HomeScreen}
           options={{ title: 'RecordaTask' }} 
         />
+
         {/* Screen para crear (o editar) tareas */}
         <Stack.Screen 
           name="TaskForm" 
           component={TaskFormScreen}
-          options={{ title: 'Nueva Actividad' }} 
+          options={({ route }) => ({
+            title: route.params && route.params.task ? 'Editar Actividad' : 'Nueva Actividad'
+          })}
         />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
+
