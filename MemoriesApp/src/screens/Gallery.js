@@ -63,7 +63,10 @@ const Gallery = ({ capturedMedia, setCapturedMedia, onLocationSelect }) => {
                 {item.location && (
                     <TouchableOpacity
                         style={styles.mapButton}
-                        onPress={() => onLocationSelect(item.location)}
+                        onPress={() => {
+                            onLocationSelect(item.location); // Set the selected location
+                            navigation.navigate('Mapa'); // Navigate to the map
+                        }}
                     >
                         <Text style={styles.mapButtonText}>Ver en Mapa</Text>
                     </TouchableOpacity>
