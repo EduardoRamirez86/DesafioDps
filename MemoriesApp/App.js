@@ -35,7 +35,7 @@ const App = () => {
                     {() => <Home onMediaCaptured={handleMediaCaptured} />}
                 </Tab.Screen>
                 <Tab.Screen name="Lista de Archivos">
-                    {() => <Gallery capturedMedia={capturedMedia} />}
+                    {() => <Gallery capturedMedia={capturedMedia} setCapturedMedia={setCapturedMedia} />}
                 </Tab.Screen>
             </Tab.Navigator>
         </NavigationContainer>

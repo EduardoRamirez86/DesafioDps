@@ -13,16 +13,14 @@ const ImagePickerComponent = ({ onMediaCaptured }) => {
 
     const handlePickImage = async () => {
         try {
-            // Solicitar permisos de cámara
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
             if (status !== "granted") {
                 Alert.alert("Permiso denegado", "El permiso para acceder a la cámara fue denegado.");
                 return;
             }
 
-            // Abrir la cámara
             const result = await ImagePicker.launchCameraAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                mediaTypes: ImagePicker.MediaTypeOptions.Images, // Usar MediaTypeOptions para imágenes
                 allowsEditing: true,
                 aspect: [1, 1],
                 quality: 0.5,
@@ -30,12 +28,12 @@ const ImagePickerComponent = ({ onMediaCaptured }) => {
 
             if (!result.canceled) {
                 setImage(result.assets[0].uri);
-                const locationData = await handleGetLocation(); // Obtener ubicación
+                const locationData = await handleGetLocation();
                 setConfirm(true);
 
-                // Notificar al componente padre si la función está definida
                 if (onMediaCaptured) {
                     onMediaCaptured({
+                        id: Date.now().toString(),
                         uri: result.assets[0].uri,
                         type: result.assets[0].type,
                         location: locationData,
