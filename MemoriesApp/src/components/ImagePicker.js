@@ -7,33 +7,38 @@ import * as Location from 'expo-location';
 const { height, width } = Dimensions.get("window");
 
 const ImagePickerComponent = ({ onMediaCaptured }) => {
-    const [image, setImage] = useState("");
+    const [media, setMedia] = useState("");
+    const [mediaType, setMediaType] = useState(""); // Almacena el tipo de media (image/video)
     const [location, setLocation] = useState(null);
     const [confirm, setConfirm] = useState(false);
 
-    const handlePickImage = async () => {
+    const handlePickMedia = async (type) => {
         try {
+            // Solicitar permisos de cámara
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
             if (status !== "granted") {
                 Alert.alert("Permiso denegado", "El permiso para acceder a la cámara fue denegado.");
                 return;
             }
 
+            // Abrir la cámara
             const result = await ImagePicker.launchCameraAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images, // Usar MediaTypeOptions para imágenes
+                mediaTypes: type, // Usar MediaTypeOptions para imágenes o videos
                 allowsEditing: true,
                 aspect: [1, 1],
                 quality: 0.5,
             });
 
             if (!result.canceled) {
-                setImage(result.assets[0].uri);
-                const locationData = await handleGetLocation();
+                setMedia(result.assets[0].uri);
+                setMediaType(result.assets[0].type); // Guardar el tipo de media
+                const locationData = await handleGetLocation(); // Obtener ubicación
                 setConfirm(true);
 
+                // Notificar al componente padre si la función está definida
                 if (onMediaCaptured) {
                     onMediaCaptured({
-                        id: Date.now().toString(),
+                        id: Date.now().toString(), // Generar un ID único
                         uri: result.assets[0].uri,
                         type: result.assets[0].type,
                         location: locationData,
@@ -69,19 +74,32 @@ const ImagePickerComponent = ({ onMediaCaptured }) => {
     return (
         <View style={styles.container}>
             <View style={styles.containerImg}>
-                <Image
-                    style={styles.img}
-                    source={image ? { uri: image } : { uri: "https://i.ibb.co/yXZXXJ1/user-login-icon-14.png" }}
-                />
+                {mediaType === "video" ? (
+                    <Text style={styles.videoText}>Video capturado</Text>
+                ) : (
+                    <Image
+                        style={styles.img}
+                        source={media ? { uri: media } : { uri: "https://i.ibb.co/yXZXXJ1/user-login-icon-14.png" }}
+                    />
+                )}
                 <View style={styles.containerBtn}>
-                    <TouchableOpacity style={styles.btnCamara} onPress={handlePickImage}>
+                    <TouchableOpacity
+                        style={styles.btnCamara}
+                        onPress={() => handlePickMedia(ImagePicker.MediaTypeOptions.Images)}
+                    >
                         <AntDesign name="camera" size={40} color="black" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.btnCamara}
+                        onPress={() => handlePickMedia(ImagePicker.MediaTypeOptions.Videos)}
+                    >
+                        <AntDesign name="videocamera" size={40} color="black" />
                     </TouchableOpacity>
                 </View>
             </View>
             {confirm && (
-                <TouchableOpacity style={styles.btnConfirm} onPress={() => Alert.alert("Imagen guardada")}>
-                    <Text style={styles.text}>Guardar Foto</Text>
+                <TouchableOpacity style={styles.btnConfirm} onPress={() => Alert.alert("Media guardado")}>
+                    <Text style={styles.text}>Guardar Media</Text>
                 </TouchableOpacity>
             )}
         </View>
@@ -107,16 +125,23 @@ const styles = StyleSheet.create({
         borderRadius: height * 0.5,
         resizeMode: 'center',
     },
+    videoText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginTop: height * 0.1,
+    },
     containerBtn: {
-        position: 'absolute',
-        bottom: width * 0.01,
-        right: width * 0.01,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 10,
     },
     btnCamara: {
         backgroundColor: "#ffffff",
         borderRadius: height * 0.5,
         borderWidth: 1,
         padding: 9,
+        marginHorizontal: 10,
     },
     btnConfirm: {
         backgroundColor: "#0000ff",

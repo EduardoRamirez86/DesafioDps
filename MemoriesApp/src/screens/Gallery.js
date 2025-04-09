@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, FlatList, Image, TouchableOpacity, Modal, Alert } from 'react-native';
+import { Video } from 'expo-av';
 
 const Gallery = ({ capturedMedia, setCapturedMedia }) => {
     const [selectedMedia, setSelectedMedia] = useState(null);
@@ -29,7 +30,11 @@ const Gallery = ({ capturedMedia, setCapturedMedia }) => {
     const renderItem = ({ item }) => (
         <View style={styles.card}>
             <TouchableOpacity onPress={() => handleMediaPress(item)}>
-                <Image source={{ uri: item.uri }} style={styles.icon} />
+                {item.type === "video" ? (
+                    <Text style={styles.videoText}>🎥 Video</Text>
+                ) : (
+                    <Image source={{ uri: item.uri }} style={styles.icon} />
+                )}
             </TouchableOpacity>
             <Text style={styles.location}>
                 {item.location
@@ -58,7 +63,17 @@ const Gallery = ({ capturedMedia, setCapturedMedia }) => {
                     onRequestClose={() => setIsModalVisible(false)}
                 >
                     <View style={styles.modalContainer}>
-                        <Image source={{ uri: selectedMedia.uri }} style={styles.modalImage} />
+                        {selectedMedia.type === "video" ? (
+                            <Video
+                                source={{ uri: selectedMedia.uri }}
+                                style={styles.modalVideo}
+                                useNativeControls
+                                resizeMode="contain"
+                                isLooping
+                            />
+                        ) : (
+                            <Image source={{ uri: selectedMedia.uri }} style={styles.modalImage} />
+                        )}
                         <TouchableOpacity
                             style={styles.closeButton}
                             onPress={() => setIsModalVisible(false)}
@@ -102,6 +117,11 @@ const styles = StyleSheet.create({
         height: 50,
         marginRight: 15,
     },
+    videoText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#555',
+    },
     location: {
         flex: 1,
         fontSize: 14,
@@ -122,6 +142,10 @@ const styles = StyleSheet.create({
         width: '90%',
         height: '70%',
         resizeMode: 'contain',
+    },
+    modalVideo: {
+        width: '90%',
+        height: '70%',
     },
     closeButton: {
         marginTop: 20,

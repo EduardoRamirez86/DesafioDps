@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
 import React from 'react';
 import ImagePicker from '../components/ImagePicker';
 import Location from '../components/Location';
@@ -7,16 +7,7 @@ const Home = ({ onMediaCaptured }) => {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Multimedia</Text>
-            <View style={styles.buttonsContainer}>
-                <TouchableOpacity style={styles.button}>
-                    <Text style={styles.buttonText}>Fotografía</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button}>
-                    <Text style={styles.buttonText}>Video</Text>
-                </TouchableOpacity>
-            </View>
             <ImagePicker onMediaCaptured={onMediaCaptured} />
-            <Location />
         </View>
     );
 };
@@ -34,20 +25,5 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 20,
-    },
-    buttonsContainer: {
-        flexDirection: 'row',
-        marginBottom: 20,
-    },
-    button: {
-        backgroundColor: '#d4e157',
-        padding: 15,
-        borderRadius: 10,
-        marginHorizontal: 10,
-    },
-    buttonText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#000',
     },
 });
