@@ -1,9 +1,8 @@
-// HomeScreen.js (fragmento)
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import TaskItem from '../components/TaskItem';
-import colors from '../../utils/colors';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function HomeScreen({ navigation }) {
   const [tasks, setTasks] = useState([]);
@@ -26,7 +25,6 @@ export default function HomeScreen({ navigation }) {
     return unsubscribe;
   }, [navigation]);
 
-  // Función para eliminar tarea con confirmación
   const deleteTask = async (id) => {
     Alert.alert(
       'Confirmar Eliminación',
@@ -46,64 +44,78 @@ export default function HomeScreen({ navigation }) {
     );
   };
 
-  // Función para manejar la edición. Se navega al TaskForm enviando el objeto tarea.
   const editTask = (task) => {
     navigation.navigate('TaskForm', { task });
   };
 
   return (
-    <View style={styles.container}>
-      {tasks.length === 0 ? (
-        <Text style={styles.emptyText}>No hay actividades, agrega una.</Text>
-      ) : (
-        <FlatList
-          data={tasks}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <TaskItem 
-              task={item} 
-              onDelete={deleteTask}
-              onEdit={editTask} // Pasamos la función de edición
-            />
-          )}
-        />
-      )}
-      <TouchableOpacity 
-        style={styles.fab}
-        onPress={() => navigation.navigate('TaskForm')}
-      >
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
-    </View>
+    <LinearGradient
+      colors={['#2E0F64', '#15002B']}
+      style={styles.background}
+    >
+      <View style={styles.container}>
+        {tasks.length === 0 ? (
+          <Text style={styles.emptyText}>No hay actividades, agrega una.</Text>
+        ) : (
+          <FlatList
+            data={tasks}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <TaskItem 
+                task={item} 
+                onDelete={deleteTask}
+                onEdit={editTask}
+              />
+            )}
+            contentContainerStyle={styles.listContent}
+          />
+        )}
+        <TouchableOpacity 
+          style={styles.fab}
+          onPress={() => navigation.navigate('TaskForm')}
+        >
+          <Text style={styles.fabText}>+</Text>
+        </TouchableOpacity>
+      </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  // ... estilos existentes, por ejemplo:
+  background: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#E8EAED',
     padding: 10,
   },
   emptyText: {
     textAlign: 'center',
     marginTop: 20,
-    fontSize: 18
+    fontSize: 18,
+    color: '#fff',
+  },
+  listContent: {
+    paddingBottom: 20,
   },
   fab: {
     position: 'absolute',
     right: 20,
     bottom: 30,
-    backgroundColor: colors.BUTTON_COLOR,
+    backgroundColor: '#FFFFFF',
     width: 60,
     height: 60,
     borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 5
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
   },
   fabText: {
     fontSize: 32,
-    color: '#fff'
-  }
+    color: '#000000',
+  },
 });
