@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import TaskItem from '../components/TaskItem';
 import { LinearGradient } from 'expo-linear-gradient';
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({ navigation, route }) {
   const [tasks, setTasks] = useState([]);
 
   const loadTasks = async () => {
@@ -21,9 +21,18 @@ export default function HomeScreen({ navigation }) {
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadTasks();
+
+      // Show notification for today's tasks if passed from LoginScreen
+      const todayTasks = route.params?.todayTasks || [];
+      if (todayTasks.length > 0) {
+        Alert.alert(
+          'Tareas para Hoy',
+          `Tienes ${todayTasks.length} tarea(s) para hoy:\n${todayTasks.map(t => `- ${t.name}`).join('\n')}`
+        );
+      }
     });
     return unsubscribe;
-  }, [navigation]);
+  }, [navigation, route.params]);
 
   const deleteTask = async (id) => {
     Alert.alert(

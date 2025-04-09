@@ -22,27 +22,6 @@ export default function LoginScreen({ navigation }) {
   const [tasksForToday, setTasksForToday] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Verificar tareas para hoy
-  const checkTasksForToday = async () => {
-    try {
-      const storedTasks = await AsyncStorage.getItem('tasks');
-      const tasks = storedTasks ? JSON.parse(storedTasks) : [];
-      const today = new Date().toISOString().split('T')[0];
-
-      const todayTasks = tasks.filter(task => {
-        const taskDate = new Date(task.dueDate).toISOString().split('T')[0];
-        return taskDate === today;
-      });
-
-      if (todayTasks.length > 0) {
-        setTasksForToday(todayTasks);
-        setModalVisible(true);
-      }
-    } catch (error) {
-      console.error('Error al verificar tareas para hoy', error);
-    }
-  };
-
   // Manejo de inicio de sesión
   const handleLogin = async () => {
     if (email.trim() === '' || password.trim() === '') {
@@ -56,8 +35,17 @@ export default function LoginScreen({ navigation }) {
 
       if (userData && userData.email === email && userData.password === password) {
         await AsyncStorage.setItem('userToken', 'dummy-token');
-        setModalVisible(false); // Ensure modal is closed
-        navigation.replace('Home'); // Navigate to Home screen
+
+        // Check tasks for today after successful login
+        const storedTasks = await AsyncStorage.getItem('tasks');
+        const tasks = storedTasks ? JSON.parse(storedTasks) : [];
+        const today = new Date().toISOString().split('T')[0];
+        const todayTasks = tasks.filter(task => {
+          const taskDate = new Date(task.dueDate).toISOString().split('T')[0];
+          return taskDate === today;
+        });
+
+        navigation.replace('Home', { todayTasks }); // Pass today's tasks to HomeScreen
       } else {
         Alert.alert('Error', 'Correo o contraseña incorrectos');
       }
