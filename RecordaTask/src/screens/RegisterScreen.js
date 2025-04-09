@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   registerButton: {
-    backgroundColor: '#2E0F64',
+    backgroundColor: '#2E0F64', // Revertido al color original
     width: '100%',
     paddingVertical: 15,
     borderRadius: 10,

@@ -9,7 +9,9 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Image
+  Image,
+  Modal,
+  FlatList
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,6 +19,29 @@ import { LinearGradient } from 'expo-linear-gradient';
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [tasksForToday, setTasksForToday] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  // Verificar tareas para hoy
+  const checkTasksForToday = async () => {
+    try {
+      const storedTasks = await AsyncStorage.getItem('tasks');
+      const tasks = storedTasks ? JSON.parse(storedTasks) : [];
+      const today = new Date().toISOString().split('T')[0];
+
+      const todayTasks = tasks.filter(task => {
+        const taskDate = new Date(task.dueDate).toISOString().split('T')[0];
+        return taskDate === today;
+      });
+
+      if (todayTasks.length > 0) {
+        setTasksForToday(todayTasks);
+        setModalVisible(true);
+      }
+    } catch (error) {
+      console.error('Error al verificar tareas para hoy', error);
+    }
+  };
 
   // Manejo de inicio de sesión
   const handleLogin = async () => {
@@ -31,7 +56,7 @@ export default function LoginScreen({ navigation }) {
 
       if (userData && userData.email === email && userData.password === password) {
         await AsyncStorage.setItem('userToken', 'dummy-token');
-        navigation.replace('Home');
+        await checkTasksForToday(); // Verificar tareas después de iniciar sesión
       } else {
         Alert.alert('Error', 'Correo o contraseña incorrectos');
       }
@@ -84,6 +109,36 @@ export default function LoginScreen({ navigation }) {
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Modal para mostrar tareas del día */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => {}} // Evitar que se cierre automáticamente
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Tareas para hoy</Text>
+            <FlatList
+              data={tasksForToday}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => (
+                <Text style={styles.taskItem}>- {item.name}</Text>
+              )}
+            />
+            <TouchableOpacity
+              style={styles.okButton}
+              onPress={() => {
+                setModalVisible(false);
+                navigation.replace('Home'); // Navegar al Home después de cerrar
+              }}
+            >
+              <Text style={styles.okButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </LinearGradient>
   );
 }
@@ -164,6 +219,42 @@ const styles = StyleSheet.create({
   registerLink: {
     fontSize: 14,
     color: '#2E0F64',
+    fontWeight: 'bold',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#2E0F64',
+  },
+  taskItem: {
+    fontSize: 16,
+    color: '#333',
+    marginVertical: 5,
+  },
+  okButton: {
+    marginTop: 20,
+    backgroundColor: '#2E0F64',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  okButtonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });

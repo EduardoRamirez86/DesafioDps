@@ -40,7 +40,8 @@ export default function HomeScreen({ navigation }) {
             await AsyncStorage.setItem('tasks', JSON.stringify(newTasks));
           },
         },
-      ]
+      ],
+      { cancelable: true }
     );
   };
 
@@ -54,6 +55,12 @@ export default function HomeScreen({ navigation }) {
       style={styles.background}
     >
       <View style={styles.container}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.replace('Login')} // Navegar al Login
+        >
+          <Text style={styles.backButtonText}>Atrás</Text>
+        </TouchableOpacity>
         {tasks.length === 0 ? (
           <Text style={styles.emptyText}>No hay actividades, agrega una.</Text>
         ) : (
@@ -102,7 +109,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 20,
     bottom: 30,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFFFFF', // Revertido al color original
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -117,5 +124,18 @@ const styles = StyleSheet.create({
   fabText: {
     fontSize: 32,
     color: '#000000',
+  },
+  backButton: {
+    backgroundColor: '#666',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    alignSelf: 'flex-start',
+    marginBottom: 10,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

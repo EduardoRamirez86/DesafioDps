@@ -159,7 +159,7 @@ export default function TaskFormScreen({ navigation, route }) {
           <Button
             title={editingTask ? "Actualizar Actividad" : "Guardar Actividad"}
             onPress={saveTask}
-            color={colors.PRIMARY_COLOR}
+            color="#28A745" // Mejorado verde para mayor visibilidad
           />
         </View>
       </View>
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   pickerButton: {
-    backgroundColor: '#444',
+    backgroundColor: '#444', // Revertido al color original
     padding: 10,
     borderRadius: 5,
     marginVertical: 5,
