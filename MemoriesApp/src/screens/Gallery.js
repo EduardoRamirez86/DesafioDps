@@ -10,6 +10,7 @@ const Gallery = ({ capturedMedia, setCapturedMedia, onLocationSelect }) => {
     const [selectedMedia, setSelectedMedia] = useState(null);
     const [editedAnnotation, setEditedAnnotation] = useState("");
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [isFullscreenModalVisible, setIsFullscreenModalVisible] = useState(false);
     const navigation = useNavigation();
 
     useEffect(() => {
@@ -64,51 +65,58 @@ const Gallery = ({ capturedMedia, setCapturedMedia, onLocationSelect }) => {
         );
     };
 
+    const handleMediaPress = (media) => {
+        setSelectedMedia(media);
+        setIsFullscreenModalVisible(true);
+    };
+
     const renderItem = ({ item }) => (
-        <View style={styles.card}>
-            <View style={styles.mediaContainer}>
-                {item.type === "video" ? (
-                    <Video
-                        source={{ uri: item.uri }}
-                        style={styles.media}
-                        useNativeControls
-                        resizeMode="cover"
-                        isLooping
-                    />
-                ) : (
-                    <Image source={{ uri: item.uri }} style={styles.media} />
-                )}
-            </View>
-            <View style={styles.infoContainer}>
-                <Text style={styles.annotation}>{item.annotation || "Sin anotación"}</Text>
-                <TouchableOpacity
-                    style={styles.locationContainer}
-                    onPress={() => {
-                        onLocationSelect(item.location); // Set the selected location
-                        navigation.navigate('Mapa'); // Navigate to the map screen
-                    }}
-                >
-                    <Ionicons name="location-sharp" size={16} color="#4CAF50" />
-                    <Text style={styles.locationText}>
-                        {locationNames[item.id] || "Ubicación desconocida"}
-                    </Text>
-                </TouchableOpacity>
-                <View style={styles.actionsContainer}>
+        <TouchableOpacity onPress={() => handleMediaPress(item)}>
+            <View style={styles.card}>
+                <View style={styles.mediaContainer}>
+                    {item.type === "video" ? (
+                        <Video
+                            source={{ uri: item.uri }}
+                            style={styles.media}
+                            useNativeControls
+                            resizeMode="cover"
+                            isLooping
+                        />
+                    ) : (
+                        <Image source={{ uri: item.uri }} style={styles.media} />
+                    )}
+                </View>
+                <View style={styles.infoContainer}>
+                    <Text style={styles.annotation}>{item.annotation || "Sin anotación"}</Text>
                     <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={() => handleDeleteMedia(item.id)}
+                        style={styles.locationContainer}
+                        onPress={() => {
+                            onLocationSelect(item.location); // Set the selected location
+                            navigation.navigate('Mapa'); // Navigate to the map screen
+                        }}
                     >
-                        <Ionicons name="trash" size={20} color="#f44336" />
+                        <Ionicons name="location-sharp" size={16} color="#4CAF50" />
+                        <Text style={styles.locationText}>
+                            {locationNames[item.id] || "Ubicación desconocida"}
+                        </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={() => handleEditAnnotation(item)}
-                    >
-                        <Ionicons name="create" size={20} color="#FFA500" />
-                    </TouchableOpacity>
+                    <View style={styles.actionsContainer}>
+                        <TouchableOpacity
+                            style={styles.actionButton}
+                            onPress={() => handleDeleteMedia(item.id)}
+                        >
+                            <Ionicons name="trash" size={20} color="#f44336" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.actionButton}
+                            onPress={() => handleEditAnnotation(item)}
+                        >
+                            <Ionicons name="create" size={20} color="#FFA500" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 
     return (
@@ -145,6 +153,37 @@ const Gallery = ({ capturedMedia, setCapturedMedia, onLocationSelect }) => {
                                 <Text style={styles.cancelButtonText}>Cancelar</Text>
                             </TouchableOpacity>
                         </View>
+                    </View>
+                </Modal>
+            )}
+            {selectedMedia && (
+                <Modal
+                    visible={isFullscreenModalVisible}
+                    transparent={true}
+                    animationType="fade"
+                    onRequestClose={() => setIsFullscreenModalVisible(false)}
+                >
+                    <View style={styles.fullscreenModalContainer}>
+                        {selectedMedia.type === "video" ? (
+                            <Video
+                                source={{ uri: selectedMedia.uri }}
+                                style={styles.fullscreenMedia}
+                                useNativeControls
+                                resizeMode="contain"
+                                isLooping
+                            />
+                        ) : (
+                            <Image
+                                source={{ uri: selectedMedia.uri }}
+                                style={styles.fullscreenMedia}
+                            />
+                        )}
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={() => setIsFullscreenModalVisible(false)}
+                        >
+                            <Ionicons name="close-circle" size={36} color="#fff" />
+                        </TouchableOpacity>
                     </View>
                 </Modal>
             )}
@@ -266,5 +305,20 @@ const styles = StyleSheet.create({
     cancelButtonText: {
         color: '#fff',
         fontWeight: 'bold',
+    },
+    fullscreenModalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    fullscreenMedia: {
+        width: '100%',
+        height: '80%',
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 40,
+        right: 20,
     },
 });
