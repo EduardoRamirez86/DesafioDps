@@ -20,7 +20,14 @@ const getColorByDate = (dueDateISO) => {
 
 const TaskItem = ({ task, onDelete, onEdit }) => {
   const reminderColor = getColorByDate(task.dueDate);
-  const displayDate = new Date(task.dueDate).toLocaleString();
+  const displayDate = new Date(task.dueDate).toLocaleString('es-ES', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
   return (
     <View style={[styles.itemContainer, { borderLeftColor: reminderColor }]}>

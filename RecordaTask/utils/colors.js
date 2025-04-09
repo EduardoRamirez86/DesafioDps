@@ -2,4 +2,5 @@
 export default {
     PRIMARY_COLOR: '#1181BF', // Color principal para botones y elementos destacados.
     BUTTON_COLOR: '#FFEF36', // Color para botones secundarios o de acción flotante.
+    SECONDARY_COLOR: '#F5A623', // Color secundario para elementos destacados.
 };

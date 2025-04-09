@@ -1,6 +1,6 @@
 // HomeScreen.js (fragmento)
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import TaskItem from '../components/TaskItem';
 import colors from '../../utils/colors';
@@ -26,11 +26,24 @@ export default function HomeScreen({ navigation }) {
     return unsubscribe;
   }, [navigation]);
 
-  // Función para eliminar tarea
+  // Función para eliminar tarea con confirmación
   const deleteTask = async (id) => {
-    const newTasks = tasks.filter(task => task.id !== id);
-    setTasks(newTasks);
-    await AsyncStorage.setItem('tasks', JSON.stringify(newTasks));
+    Alert.alert(
+      'Confirmar Eliminación',
+      '¿Está seguro de que desea eliminar esta tarea?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            const newTasks = tasks.filter(task => task.id !== id);
+            setTasks(newTasks);
+            await AsyncStorage.setItem('tasks', JSON.stringify(newTasks));
+          },
+        },
+      ]
+    );
   };
 
   // Función para manejar la edición. Se navega al TaskForm enviando el objeto tarea.

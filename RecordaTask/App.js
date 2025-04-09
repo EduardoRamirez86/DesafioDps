@@ -26,7 +26,7 @@ export default function App() {
         <Stack.Screen 
           name="Register" 
           component={RegisterScreen}
-          options={{ title: 'Crear Cuenta' }}
+          options={{ title: 'Crear Cuenta' }} 
         />
 
         {/* Screen principal con la lista de actividades */}

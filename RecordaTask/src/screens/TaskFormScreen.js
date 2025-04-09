@@ -16,21 +16,12 @@ export default function TaskFormScreen({ navigation, route }) {
   const [dueDate, setDueDate] = useState(editingTask?.dueDate ? new Date(editingTask.dueDate) : new Date()); // Fecha y hora de entrega.
   const [showDatePicker, setShowDatePicker] = useState(false); // Controla la visibilidad del selector de fecha.
   const [showTimePicker, setShowTimePicker] = useState(false); // Controla la visibilidad del selector de hora.
-  const [manualInput, setManualInput] = useState(false); // Alterna entre entrada manual y uso de pickers.
-  const [manualDate, setManualDate] = useState(''); // Fecha ingresada manualmente.
-  const [manualTime, setManualTime] = useState(''); // Hora ingresada manualmente.
 
-  // Precarga los campos de fecha y hora manual si se está editando una tarea.
+  // Precarga los campos de fecha y hora si se está editando una tarea.
   useEffect(() => {
     if (editingTask) {
       const dt = new Date(editingTask.dueDate);
-      const day = ('0' + dt.getDate()).slice(-2);
-      const month = ('0' + (dt.getMonth() + 1)).slice(-2);
-      const year = dt.getFullYear();
-      const hours = ('0' + dt.getHours()).slice(-2);
-      const minutes = ('0' + dt.getMinutes()).slice(-2);
-      setManualDate(`${day}/${month}/${year}`);
-      setManualTime(`${hours}:${minutes}`);
+      setDueDate(dt);
     }
   }, [editingTask]);
 
@@ -64,56 +55,11 @@ export default function TaskFormScreen({ navigation, route }) {
     }
   };
 
-  // Alterna entre entrada manual y uso de pickers.
-  const toggleManualInput = () => {
-    setManualInput(!manualInput);
-    setShowDatePicker(false); // Reinicia los pickers al cambiar de modo.
-    setShowTimePicker(false);
-  };
-
-  // Convierte las cadenas de fecha y hora ingresadas manualmente en un objeto Date.
-  const parseManualDateTime = (dateStr, timeStr) => {
-    try {
-      const dateParts = dateStr.split('/');
-      const timeParts = timeStr.split(':');
-
-      if (dateParts.length !== 3 || timeParts.length !== 2) {
-        return null; // Formato inválido.
-      }
-
-      const day = parseInt(dateParts[0], 10);
-      const month = parseInt(dateParts[1], 10) - 1;
-      const year = parseInt(dateParts[2], 10);
-      const hours = parseInt(timeParts[0], 10);
-      const minutes = parseInt(timeParts[1], 10);
-
-      const parsedDate = new Date(year, month, day, hours, minutes);
-
-      if (isNaN(parsedDate.getTime())) {
-        return null; // Fecha inválida.
-      }
-      return parsedDate;
-    } catch (error) {
-      console.error('Error parsing manual date/time:', error);
-      return null;
-    }
-  };
-
   // Guarda la tarea en AsyncStorage.
   const saveTask = async () => {
     if (!name.trim() || !category.trim()) {
       Alert.alert('Error', 'Complete los campos obligatorios');
       return;
-    }
-
-    let finalDate = dueDate;
-    if (manualInput) {
-      const parsed = parseManualDateTime(manualDate, manualTime);
-      if (!parsed) {
-        Alert.alert('Error', 'La fecha u hora ingresadas no son válidas. Use el formato DD/MM/YYYY y HH:mm');
-        return;
-      }
-      finalDate = parsed;
     }
 
     try {
@@ -124,7 +70,7 @@ export default function TaskFormScreen({ navigation, route }) {
         // Actualiza una tarea existente.
         tasks = tasks.map(task =>
           task.id === editingTask.id
-            ? { ...task, name, category, team, dueDate: finalDate.toISOString() }
+            ? { ...task, name, category, team, dueDate: dueDate.toISOString() }
             : task
         );
       } else {
@@ -134,7 +80,7 @@ export default function TaskFormScreen({ navigation, route }) {
           name,
           category,
           team,
-          dueDate: finalDate.toISOString()
+          dueDate: dueDate.toISOString()
         });
       }
 
@@ -173,54 +119,25 @@ export default function TaskFormScreen({ navigation, route }) {
         placeholder="Ingrese el equipo"
       />
 
-      {/* Alterna entre entrada manual y pickers */}
+      {/* Botones para abrir los pickers */}
       <Text style={styles.label}>Fecha y Hora de Entrega *</Text>
-      <TouchableOpacity onPress={toggleManualInput} style={styles.toggleButton}>
-        <Text style={styles.toggleButtonText}>
-          {manualInput ? 'Usar picker nativo' : 'Ingresar fecha/hora manualmente'}
-        </Text>
+      <TouchableOpacity
+        onPress={() => setShowDatePicker(true)}
+        style={styles.pickerButton}
+      >
+        <Text style={styles.pickerButtonText}>Seleccionar Fecha</Text>
       </TouchableOpacity>
 
-      {manualInput ? (
-        // Campos de entrada manual
-        <View>
-          <TextInput
-            style={styles.input}
-            placeholder="DD/MM/YYYY"
-            value={manualDate}
-            onChangeText={setManualDate}
-            keyboardType="numeric"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="HH:mm"
-            value={manualTime}
-            onChangeText={setManualTime}
-            keyboardType="numeric"
-          />
-        </View>
-      ) : (
-        // Botones para abrir los pickers
-        <View>
-          <TouchableOpacity
-            onPress={() => setShowDatePicker(true)}
-            style={styles.pickerButton}
-          >
-            <Text style={styles.pickerButtonText}>Seleccionar Fecha</Text>
-          </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => setShowTimePicker(true)}
+        style={styles.pickerButton}
+      >
+        <Text style={styles.pickerButtonText}>Seleccionar Hora</Text>
+      </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => setShowTimePicker(true)}
-            style={styles.pickerButton}
-          >
-            <Text style={styles.pickerButtonText}>Seleccionar Hora</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.dateText}>
-            {dueDate.toLocaleDateString()} {dueDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-          </Text>
-        </View>
-      )}
+      <Text style={styles.dateText}>
+        {dueDate.toLocaleDateString()} {dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      </Text>
 
       {/* Pickers de fecha y hora */}
       {showDatePicker && (
@@ -280,17 +197,6 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     marginTop: 30
-  },
-  toggleButton: {
-    backgroundColor: '#ddd',
-    padding: 10,
-    borderRadius: 5,
-    marginVertical: 10,
-    alignItems: 'center'
-  },
-  toggleButtonText: {
-    color: '#333',
-    fontWeight: 'bold'
   },
   pickerButton: {
     backgroundColor: colors.BUTTON_COLOR || '#eee',
