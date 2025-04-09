@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Image, Dimensions, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, Text, View, Image, Dimensions, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
 import React, { useState } from 'react';
 import { AntDesign } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -8,22 +8,21 @@ const { height, width } = Dimensions.get("window");
 
 const ImagePickerComponent = ({ onMediaCaptured }) => {
     const [media, setMedia] = useState("");
-    const [mediaType, setMediaType] = useState(""); // Almacena el tipo de media (image/video)
+    const [mediaType, setMediaType] = useState(""); // Tipo de media (imagen o video)
+    const [annotation, setAnnotation] = useState(""); // Anotación de texto
     const [location, setLocation] = useState(null);
-    const [confirm, setConfirm] = useState(false);
+    const [isModalVisible, setIsModalVisible] = useState(false);
 
     const handlePickMedia = async (type) => {
         try {
-            // Solicitar permisos de cámara
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
             if (status !== "granted") {
                 Alert.alert("Permiso denegado", "El permiso para acceder a la cámara fue denegado.");
                 return;
             }
 
-            // Abrir la cámara
             const result = await ImagePicker.launchCameraAsync({
-                mediaTypes: type, // Usar MediaTypeOptions para imágenes o videos
+                mediaTypes: type,
                 allowsEditing: true,
                 aspect: [1, 1],
                 quality: 0.5,
@@ -31,19 +30,10 @@ const ImagePickerComponent = ({ onMediaCaptured }) => {
 
             if (!result.canceled) {
                 setMedia(result.assets[0].uri);
-                setMediaType(result.assets[0].type); // Guardar el tipo de media
-                const locationData = await handleGetLocation(); // Obtener ubicación
-                setConfirm(true);
-
-                // Notificar al componente padre si la función está definida
-                if (onMediaCaptured) {
-                    onMediaCaptured({
-                        id: Date.now().toString(), // Generar un ID único
-                        uri: result.assets[0].uri,
-                        type: result.assets[0].type,
-                        location: locationData,
-                    });
-                }
+                setMediaType(result.assets[0].type);
+                const locationData = await handleGetLocation();
+                setLocation(locationData);
+                setIsModalVisible(true); // Mostrar modal después de capturar
             }
         } catch (error) {
             Alert.alert("Error", `Ocurrió un error al intentar abrir la cámara: ${error.message}`);
@@ -59,49 +49,79 @@ const ImagePickerComponent = ({ onMediaCaptured }) => {
             }
 
             const location = await Location.getCurrentPositionAsync({});
-            const locationData = {
+            return {
                 latitude: location.coords.latitude,
                 longitude: location.coords.longitude,
             };
-            setLocation(locationData);
-            return locationData;
         } catch (error) {
             Alert.alert("Error", `Ocurrió un error al intentar obtener la ubicación: ${error.message}`);
             return null;
         }
     };
 
+    const handleSaveMedia = () => {
+        if (onMediaCaptured) {
+            onMediaCaptured({
+                id: Date.now().toString(),
+                uri: media,
+                type: mediaType,
+                location,
+                annotation,
+            });
+        }
+        setMedia("");
+        setAnnotation("");
+        setIsModalVisible(false); // Cerrar modal después de guardar
+    };
+
     return (
         <View style={styles.container}>
-            <View style={styles.containerImg}>
-                {mediaType === "video" ? (
-                    <Text style={styles.videoText}>Video capturado</Text>
-                ) : (
-                    <Image
-                        style={styles.img}
-                        source={media ? { uri: media } : { uri: "https://i.ibb.co/yXZXXJ1/user-login-icon-14.png" }}
-                    />
-                )}
-                <View style={styles.containerBtn}>
-                    <TouchableOpacity
-                        style={styles.btnCamara}
-                        onPress={() => handlePickMedia(ImagePicker.MediaTypeOptions.Images)}
-                    >
-                        <AntDesign name="camera" size={40} color="black" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.btnCamara}
-                        onPress={() => handlePickMedia(ImagePicker.MediaTypeOptions.Videos)}
-                    >
-                        <AntDesign name="videocamera" size={40} color="black" />
-                    </TouchableOpacity>
-                </View>
-            </View>
-            {confirm && (
-                <TouchableOpacity style={styles.btnConfirm} onPress={() => Alert.alert("Media guardado")}>
-                    <Text style={styles.text}>Guardar Media</Text>
+            <View style={styles.containerBtn}>
+                <TouchableOpacity
+                    style={styles.btnCamara}
+                    onPress={() => handlePickMedia(ImagePicker.MediaTypeOptions.Images)}
+                >
+                    <AntDesign name="camera" size={40} color="black" />
                 </TouchableOpacity>
-            )}
+                <TouchableOpacity
+                    style={styles.btnCamara}
+                    onPress={() => handlePickMedia(ImagePicker.MediaTypeOptions.Videos)}
+                >
+                    <AntDesign name="videocamera" size={40} color="black" />
+                </TouchableOpacity>
+            </View>
+
+            <Modal
+                visible={isModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setIsModalVisible(false)}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        {mediaType === "video" ? (
+                            <Text style={styles.modalText}>Video capturado</Text>
+                        ) : (
+                            <Image style={styles.img} source={{ uri: media }} />
+                        )}
+                        <TextInput
+                            style={styles.annotationInput}
+                            placeholder="Escribe una anotación..."
+                            value={annotation}
+                            onChangeText={setAnnotation}
+                        />
+                        <TouchableOpacity style={styles.saveButton} onPress={handleSaveMedia}>
+                            <Text style={styles.saveButtonText}>Guardar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.cancelButton}
+                            onPress={() => setIsModalVisible(false)}
+                        >
+                            <Text style={styles.cancelButtonText}>Cancelar</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -114,47 +134,73 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 20,
     },
-    containerImg: {
-        borderWidth: 1,
-        borderRadius: height * 0.5,
-        backgroundColor: "#ffffff",
-    },
-    img: {
-        height: height * 0.3,
-        width: height * 0.3,
-        borderRadius: height * 0.5,
-        resizeMode: 'center',
-    },
-    videoText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginTop: height * 0.1,
-    },
     containerBtn: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginTop: 10,
+        width: '80%',
     },
     btnCamara: {
         backgroundColor: "#ffffff",
-        borderRadius: height * 0.5,
+        borderRadius: 50,
         borderWidth: 1,
-        padding: 9,
+        padding: 10,
         marginHorizontal: 10,
     },
-    btnConfirm: {
-        backgroundColor: "#0000ff",
-        width: width * 0.8,
-        height: 40,
+    img: {
+        height: height * 0.4,
+        width: height * 0.4,
+        borderRadius: 10,
+        resizeMode: 'cover',
+        marginBottom: 20,
+    },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 20,
-        borderRadius: 3,
     },
-    text: {
+    modalContent: {
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 20,
+        width: '90%',
+        alignItems: 'center',
+    },
+    modalText: {
+        fontSize: 18,
         fontWeight: 'bold',
-        color: "#ffffff",
-        fontSize: 16,
+        marginBottom: 20,
+    },
+    annotationInput: {
+        width: '100%',
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        marginBottom: 20,
+        backgroundColor: '#fff',
+    },
+    saveButton: {
+        backgroundColor: '#4CAF50',
+        padding: 10,
+        borderRadius: 5,
+        width: '100%',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    saveButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+    cancelButton: {
+        backgroundColor: '#f44336',
+        padding: 10,
+        borderRadius: 5,
+        width: '100%',
+        alignItems: 'center',
+    },
+    cancelButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
     },
 });
