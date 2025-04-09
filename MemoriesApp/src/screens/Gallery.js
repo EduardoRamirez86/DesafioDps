@@ -1,23 +1,21 @@
 import { StyleSheet, View, Text, FlatList, Image, TouchableOpacity } from 'react-native';
 import React from 'react';
 
-const mockData = [
-    { id: '1', type: 'image', location: 'Soyapango, UDB' },
-    { id: '2', type: 'video', location: 'Soyapango, UDB' },
-];
-
-const Gallery = () => {
+const Gallery = ({ capturedMedia }) => {
     const renderItem = ({ item }) => (
         <View style={styles.card}>
             <Image
-                source={
-                    item.type === 'image'
-                        ? require('../../assets/icon.png') // Corrected path
-                        : require('../../assets/video-icon.png') // Corrected path
-                }
+                source={{ uri: item.uri }}
                 style={styles.icon}
             />
-            <Text style={styles.location}>{item.location}</Text>
+            <Text style={styles.location}>
+                {item.location
+                    ? `Lat: ${item.location.latitude}, Lng: ${item.location.longitude}`
+                    : "Sin ubicación"}
+            </Text>
+            <Text style={styles.type}>
+                {item.type === 'image' ? 'Imagen' : 'Video'}
+            </Text>
             <View style={styles.actions}>
                 <TouchableOpacity>
                     <Text style={styles.actionText}>🗑</Text>
@@ -30,9 +28,9 @@ const Gallery = () => {
         <View style={styles.container}>
             <Text style={styles.title}>Lista de Archivos</Text>
             <FlatList
-                data={mockData}
+                data={capturedMedia}
                 renderItem={renderItem}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item, index) => index.toString()}
             />
         </View>
     );
@@ -70,7 +68,13 @@ const styles = StyleSheet.create({
     },
     location: {
         flex: 1,
-        fontSize: 16,
+        fontSize: 14,
+        color: '#555',
+    },
+    type: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#333',
     },
     actions: {
         flexDirection: 'row',

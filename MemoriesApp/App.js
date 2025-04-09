@@ -1,6 +1,6 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import React from 'react';
+import React, { useState } from 'react';
 import Home from './src/screens/Home';
 import Gallery from './src/screens/Gallery';
 import { Ionicons } from 'react-native-vector-icons';
@@ -8,6 +8,12 @@ import { Ionicons } from 'react-native-vector-icons';
 const Tab = createBottomTabNavigator();
 
 const App = () => {
+    const [capturedMedia, setCapturedMedia] = useState([]);
+
+    const handleMediaCaptured = (media) => {
+        setCapturedMedia((prev) => [...prev, media]);
+    };
+
     return (
         <NavigationContainer>
             <Tab.Navigator
@@ -25,8 +31,12 @@ const App = () => {
                     tabBarInactiveTintColor: 'gray',
                 })}
             >
-                <Tab.Screen name="Multimedia" component={Home} />
-                <Tab.Screen name="Lista de Archivos" component={Gallery} />
+                <Tab.Screen name="Multimedia">
+                    {() => <Home onMediaCaptured={handleMediaCaptured} />}
+                </Tab.Screen>
+                <Tab.Screen name="Lista de Archivos">
+                    {() => <Gallery capturedMedia={capturedMedia} />}
+                </Tab.Screen>
             </Tab.Navigator>
         </NavigationContainer>
     );

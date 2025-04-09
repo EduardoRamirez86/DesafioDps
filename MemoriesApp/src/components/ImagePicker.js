@@ -1,57 +1,71 @@
 import { StyleSheet, Text, View, Image, Dimensions, TouchableOpacity, Alert } from 'react-native';
 import React, { useState } from 'react';
 import { AntDesign } from '@expo/vector-icons';
-import * as ImagePickerExpo from 'expo-image-picker';
-import * as LocationExpo from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 
 const { height, width } = Dimensions.get("window");
 
-const ImagePicker = () => {
+const ImagePickerComponent = ({ onMediaCaptured }) => {
     const [image, setImage] = useState("");
     const [location, setLocation] = useState(null);
     const [confirm, setConfirm] = useState(false);
 
     const handlePickImage = async () => {
-        const { status } = await ImagePickerExpo.requestCameraPermissionsAsync();
+        try {
+            // Solicitar permisos de cámara
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== "granted") {
+                Alert.alert("Permiso denegado", "El permiso para acceder a la cámara fue denegado.");
+                return;
+            }
 
-        if (status !== "granted") {
-            Alert.alert("El permiso para acceder a la cámara fue denegado");
-            return;
-        }
+            // Abrir la cámara
+            const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.5,
+            });
 
-        let result = await ImagePickerExpo.launchCameraAsync({
-            mediaTypes: ImagePickerExpo.MediaTypeOptions.All,
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 0.5,
-        });
+            if (!result.canceled) {
+                setImage(result.assets[0].uri);
+                const locationData = await handleGetLocation(); // Obtener ubicación
+                setConfirm(true);
 
-        if (!result.canceled) {
-            setImage(result.assets[0].uri);
-            await handleGetLocation(); // Obtiene las coordenadas al capturar la imagen o video
-            setConfirm(true);
+                // Notificar al componente padre si la función está definida
+                if (onMediaCaptured) {
+                    onMediaCaptured({
+                        uri: result.assets[0].uri,
+                        type: result.assets[0].type,
+                        location: locationData,
+                    });
+                }
+            }
+        } catch (error) {
+            Alert.alert("Error", `Ocurrió un error al intentar abrir la cámara: ${error.message}`);
         }
     };
 
     const handleGetLocation = async () => {
-        let { status } = await LocationExpo.requestForegroundPermissionsAsync();
+        try {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert("Permiso denegado", "El permiso para acceder a la ubicación fue denegado.");
+                return null;
+            }
 
-        if (status !== 'granted') {
-            Alert.alert("El permiso para acceder a la ubicación fue denegado");
-            return;
+            const location = await Location.getCurrentPositionAsync({});
+            const locationData = {
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+            };
+            setLocation(locationData);
+            return locationData;
+        } catch (error) {
+            Alert.alert("Error", `Ocurrió un error al intentar obtener la ubicación: ${error.message}`);
+            return null;
         }
-
-        let location = await LocationExpo.getCurrentPositionAsync({});
-        setLocation({
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-        });
-    };
-
-    const handleSubmitImage = () => {
-        // Guardar en base de datos la imagen/video junto con las coordenadas
-        Alert.alert("Imagen/Video Subido", `Coordenadas: ${location.latitude}, ${location.longitude}`);
-        setConfirm(false);
     };
 
     return (
@@ -68,15 +82,15 @@ const ImagePicker = () => {
                 </View>
             </View>
             {confirm && (
-                <TouchableOpacity style={styles.btnConfirm} onPress={handleSubmitImage}>
-                    <Text style={styles.text}>Guardar Foto/Video</Text>
+                <TouchableOpacity style={styles.btnConfirm} onPress={() => Alert.alert("Imagen guardada")}>
+                    <Text style={styles.text}>Guardar Foto</Text>
                 </TouchableOpacity>
             )}
         </View>
     );
 };
 
-export default ImagePicker;
+export default ImagePickerComponent;
 
 const styles = StyleSheet.create({
     container: {

@@ -3,7 +3,7 @@ import React from 'react';
 import ImagePicker from '../components/ImagePicker';
 import Location from '../components/Location';
 
-const Home = () => {
+const Home = ({ onMediaCaptured }) => {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Multimedia</Text>
@@ -15,7 +15,7 @@ const Home = () => {
                     <Text style={styles.buttonText}>Video</Text>
                 </TouchableOpacity>
             </View>
-            <ImagePicker />
+            <ImagePicker onMediaCaptured={onMediaCaptured} />
             <Location />
         </View>
     );
