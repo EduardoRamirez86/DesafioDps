@@ -1,13 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, FlatList, Image, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { Video } from 'expo-av';
+import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
 
 const Gallery = ({ capturedMedia, setCapturedMedia, onLocationSelect }) => {
+    const [locationNames, setLocationNames] = useState({});
     const [selectedMedia, setSelectedMedia] = useState(null);
-    const [isModalVisible, setIsModalVisible] = useState(false);
     const [editedAnnotation, setEditedAnnotation] = useState("");
+    const [isModalVisible, setIsModalVisible] = useState(false);
     const navigation = useNavigation();
+
+    useEffect(() => {
+        const fetchLocationNames = async () => {
+            const updatedLocationNames = {};
+            for (const media of capturedMedia) {
+                if (media.location && !locationNames[media.id]) {
+                    const { latitude, longitude } = media.location;
+                    try {
+                        const [result] = await Location.reverseGeocodeAsync({ latitude, longitude });
+                        updatedLocationNames[media.id] = `${result.region || ''}, ${result.country || ''}`;
+                    } catch (error) {
+                        updatedLocationNames[media.id] = 'Ubicación desconocida';
+                    }
+                }
+            }
+            setLocationNames((prev) => ({ ...prev, ...updatedLocationNames }));
+        };
+
+        fetchLocationNames();
+    }, [capturedMedia]);
 
     const handleEditAnnotation = (media) => {
         setSelectedMedia(media);
@@ -26,65 +49,76 @@ const Gallery = ({ capturedMedia, setCapturedMedia, onLocationSelect }) => {
 
     const handleDeleteMedia = (id) => {
         Alert.alert(
-            "Eliminar archivo",
+            "Eliminar",
             "¿Estás seguro de que deseas eliminar este archivo?",
             [
                 { text: "Cancelar", style: "cancel" },
-                { text: "Eliminar", style: "destructive", onPress: () => deleteMedia(id) },
+                {
+                    text: "Eliminar",
+                    style: "destructive",
+                    onPress: () => {
+                        setCapturedMedia((prev) => prev.filter((item) => item.id !== id));
+                    },
+                },
             ]
         );
     };
 
-    const deleteMedia = (id) => {
-        const updatedMedia = capturedMedia.filter((item) => item.id !== id);
-        setCapturedMedia(updatedMedia);
-    };
-
     const renderItem = ({ item }) => (
         <View style={styles.card}>
-            {item.type === "video" ? (
-                <Video
-                    source={{ uri: item.uri }}
-                    style={styles.media}
-                    useNativeControls
-                    resizeMode="cover"
-                    isLooping
-                />
-            ) : (
-                <Image source={{ uri: item.uri }} style={styles.media} />
-            )}
+            <View style={styles.mediaContainer}>
+                {item.type === "video" ? (
+                    <Video
+                        source={{ uri: item.uri }}
+                        style={styles.media}
+                        useNativeControls
+                        resizeMode="cover"
+                        isLooping
+                    />
+                ) : (
+                    <Image source={{ uri: item.uri }} style={styles.media} />
+                )}
+            </View>
             <View style={styles.infoContainer}>
                 <Text style={styles.annotation}>{item.annotation || "Sin anotación"}</Text>
-                <Text style={styles.location}>
-                    {item.location
-                        ? `Lat: ${item.location.latitude}, Lng: ${item.location.longitude}`
-                        : "Sin ubicación"}
-                </Text>
-                {item.location && (
-                    <TouchableOpacity
-                        style={styles.mapButton}
-                        onPress={() => {
-                            onLocationSelect(item.location); // Set the selected location
-                            navigation.navigate('Mapa'); // Navigate to the map
-                        }}
-                    >
-                        <Text style={styles.mapButtonText}>Ver en Mapa</Text>
-                    </TouchableOpacity>
-                )}
-                <TouchableOpacity onPress={() => handleDeleteMedia(item.id)}>
-                    <Text style={styles.deleteText}>🗑 Eliminar</Text>
+                <TouchableOpacity
+                    style={styles.locationContainer}
+                    onPress={() => {
+                        onLocationSelect(item.location); // Set the selected location
+                        navigation.navigate('Mapa'); // Navigate to the map screen
+                    }}
+                >
+                    <Ionicons name="location-sharp" size={16} color="#4CAF50" />
+                    <Text style={styles.locationText}>
+                        {locationNames[item.id] || "Ubicación desconocida"}
+                    </Text>
                 </TouchableOpacity>
+                <View style={styles.actionsContainer}>
+                    <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() => handleDeleteMedia(item.id)}
+                    >
+                        <Ionicons name="trash" size={20} color="#f44336" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() => handleEditAnnotation(item)}
+                    >
+                        <Ionicons name="create" size={20} color="#FFA500" />
+                    </TouchableOpacity>
+                </View>
             </View>
         </View>
     );
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Lista de Archivos</Text>
+            <Text style={styles.title}>Galería</Text>
             <FlatList
                 data={capturedMedia}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id.toString()}
+                contentContainerStyle={styles.listContent}
             />
             {selectedMedia && (
                 <Modal
@@ -95,11 +129,6 @@ const Gallery = ({ capturedMedia, setCapturedMedia, onLocationSelect }) => {
                 >
                     <View style={styles.modalContainer}>
                         <View style={styles.modalContent}>
-                            {selectedMedia.type === "video" ? (
-                                <Text style={styles.modalText}>Video seleccionado</Text>
-                            ) : (
-                                <Image style={styles.img} source={{ uri: selectedMedia.uri }} />
-                            )}
                             <TextInput
                                 style={styles.annotationInput}
                                 placeholder="Edita la anotación..."
@@ -138,50 +167,60 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         textAlign: 'center',
     },
+    listContent: {
+        paddingBottom: 20,
+    },
     card: {
         backgroundColor: '#FFF',
-        borderRadius: 10,
-        padding: 15,
+        borderRadius: 15,
         marginBottom: 15,
+        overflow: 'hidden',
         shadowColor: '#000',
         shadowOpacity: 0.1,
         shadowRadius: 5,
         elevation: 3,
     },
-    media: {
+    mediaContainer: {
         width: '100%',
         height: 200,
-        borderRadius: 10,
+        backgroundColor: '#E0E0E0',
+    },
+    media: {
+        width: '100%',
+        height: '100%',
     },
     infoContainer: {
-        marginTop: 10,
+        padding: 15,
     },
     annotation: {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#333',
-        marginBottom: 5,
-    },
-    location: {
-        fontSize: 14,
-        color: '#555',
         marginBottom: 10,
     },
-    deleteText: {
-        fontSize: 14,
-        color: 'red',
-        fontWeight: 'bold',
-    },
-    mapButton: {
-        backgroundColor: '#4CAF50',
-        padding: 10,
-        borderRadius: 5,
+    locationContainer: {
+        flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 10,
     },
-    mapButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
+    locationText: {
+        fontSize: 14,
+        color: '#4CAF50',
+        marginLeft: 5,
+    },
+    actionsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 10,
+    },
+    actionButton: {
+        padding: 10,
+        borderRadius: 5,
+        backgroundColor: '#F5F5F5',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        marginHorizontal: 5,
     },
     modalContainer: {
         flex: 1,
@@ -195,18 +234,6 @@ const styles = StyleSheet.create({
         padding: 20,
         width: '90%',
         alignItems: 'center',
-    },
-    modalText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 20,
-    },
-    img: {
-        height: 200,
-        width: 200,
-        borderRadius: 10,
-        resizeMode: 'cover',
-        marginBottom: 20,
     },
     annotationInput: {
         width: '100%',
