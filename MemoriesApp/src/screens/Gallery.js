@@ -4,6 +4,7 @@ import { Video } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const Gallery = ({ capturedMedia, setCapturedMedia, onLocationSelect }) => {
     const [locationNames, setLocationNames] = useState({});
@@ -91,8 +92,8 @@ const Gallery = ({ capturedMedia, setCapturedMedia, onLocationSelect }) => {
                     <TouchableOpacity
                         style={styles.locationContainer}
                         onPress={() => {
-                            onLocationSelect(item.location); // Set the selected location
-                            navigation.navigate('Mapa'); // Navigate to the map screen
+                            onLocationSelect(item.location);
+                            navigation.navigate('Mapa');
                         }}
                     >
                         <Ionicons name="location-sharp" size={16} color="#4CAF50" />
@@ -120,91 +121,101 @@ const Gallery = ({ capturedMedia, setCapturedMedia, onLocationSelect }) => {
     );
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Galería</Text>
-            <FlatList
-                data={capturedMedia}
-                renderItem={renderItem}
-                keyExtractor={(item) => item.id.toString()}
-                contentContainerStyle={styles.listContent}
-            />
-            {selectedMedia && (
-                <Modal
-                    visible={isModalVisible}
-                    transparent={true}
-                    animationType="slide"
-                    onRequestClose={() => setIsModalVisible(false)}
-                >
-                    <View style={styles.modalContainer}>
-                        <View style={styles.modalContent}>
-                            <TextInput
-                                style={styles.annotationInput}
-                                placeholder="Edita la anotación..."
-                                value={editedAnnotation}
-                                onChangeText={setEditedAnnotation}
-                            />
-                            <TouchableOpacity style={styles.saveButton} onPress={handleSaveAnnotation}>
-                                <Text style={styles.saveButtonText}>Guardar</Text>
-                            </TouchableOpacity>
+        <LinearGradient 
+            colors={['#0f2027', '#203a43', '#2c5364']}
+            style={styles.background}
+        >
+            <View style={styles.innerContainer}>
+                <Text style={styles.title}>Galería</Text>
+                <FlatList
+                    data={capturedMedia}
+                    renderItem={renderItem}
+                    keyExtractor={(item) => item.id.toString()}
+                    contentContainerStyle={styles.listContent}
+                />
+                {selectedMedia && (
+                    <Modal
+                        visible={isModalVisible}
+                        transparent={true}
+                        animationType="slide"
+                        onRequestClose={() => setIsModalVisible(false)}
+                    >
+                        <View style={styles.modalContainer}>
+                            <View style={styles.modalContent}>
+                                <TextInput
+                                    style={styles.annotationInput}
+                                    placeholder="Edita la anotación..."
+                                    value={editedAnnotation}
+                                    onChangeText={setEditedAnnotation}
+                                />
+                                <TouchableOpacity style={styles.saveButton} onPress={handleSaveAnnotation}>
+                                    <Text style={styles.saveButtonText}>Guardar</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.cancelButton}
+                                    onPress={() => setIsModalVisible(false)}
+                                >
+                                    <Text style={styles.cancelButtonText}>Cancelar</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </Modal>
+                )}
+                {selectedMedia && (
+                    <Modal
+                        visible={isFullscreenModalVisible}
+                        transparent={true}
+                        animationType="fade"
+                        onRequestClose={() => setIsFullscreenModalVisible(false)}
+                    >
+                        <View style={styles.fullscreenModalContainer}>
+                            {selectedMedia.type === "video" ? (
+                                <Video
+                                    source={{ uri: selectedMedia.uri }}
+                                    style={styles.fullscreenMedia}
+                                    useNativeControls
+                                    resizeMode="contain"
+                                    isLooping
+                                />
+                            ) : (
+                                <Image
+                                    source={{ uri: selectedMedia.uri }}
+                                    style={styles.fullscreenMedia}
+                                />
+                            )}
                             <TouchableOpacity
-                                style={styles.cancelButton}
-                                onPress={() => setIsModalVisible(false)}
+                                style={styles.closeButton}
+                                onPress={() => setIsFullscreenModalVisible(false)}
                             >
-                                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                                <Ionicons name="close-circle" size={36} color="#fff" />
                             </TouchableOpacity>
                         </View>
-                    </View>
-                </Modal>
-            )}
-            {selectedMedia && (
-                <Modal
-                    visible={isFullscreenModalVisible}
-                    transparent={true}
-                    animationType="fade"
-                    onRequestClose={() => setIsFullscreenModalVisible(false)}
-                >
-                    <View style={styles.fullscreenModalContainer}>
-                        {selectedMedia.type === "video" ? (
-                            <Video
-                                source={{ uri: selectedMedia.uri }}
-                                style={styles.fullscreenMedia}
-                                useNativeControls
-                                resizeMode="contain"
-                                isLooping
-                            />
-                        ) : (
-                            <Image
-                                source={{ uri: selectedMedia.uri }}
-                                style={styles.fullscreenMedia}
-                            />
-                        )}
-                        <TouchableOpacity
-                            style={styles.closeButton}
-                            onPress={() => setIsFullscreenModalVisible(false)}
-                        >
-                            <Ionicons name="close-circle" size={36} color="#fff" />
-                        </TouchableOpacity>
-                    </View>
-                </Modal>
-            )}
-        </View>
+                    </Modal>
+                )}
+            </View>
+        </LinearGradient>
     );
 };
 
 export default Gallery;
 
 const styles = StyleSheet.create({
-    container: {
+    background: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+    },
+    innerContainer: {
+        flex: 1,
         padding: 20,
     },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#4A4A4A',
+        color: '#FFD700',
         marginBottom: 20,
         textAlign: 'center',
+        textShadowColor: '#000',
+        textShadowOffset: { width: 2, height: 2 },
+        textShadowRadius: 4,
     },
     listContent: {
         paddingBottom: 20,
