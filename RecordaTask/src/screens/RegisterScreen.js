@@ -19,19 +19,20 @@ export default function RegisterScreen({ navigation }) {
   const [password, setPassword] = useState('');
 
   const handleRegister = async () => {
-    if (!email || !password) {
+    if (!email.trim() || !password.trim()) {
       Alert.alert('Error', 'Todos los campos son obligatorios');
       return;
     }
 
-    const userData = { email, password };
+    const userData = { email: email.trim(), password: password.trim() };
 
     try {
       await AsyncStorage.setItem('registeredUser', JSON.stringify(userData));
       Alert.alert('Registro Exitoso', 'Ya puedes iniciar sesión');
-      navigation.replace('Login'); // Redirige al login
+      navigation.replace('Login'); // Navigate to Login screen
     } catch (error) {
       console.error('Error al guardar el usuario', error);
+      Alert.alert('Error', 'No se pudo completar el registro');
     }
   };
 

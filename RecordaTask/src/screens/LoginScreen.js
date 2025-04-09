@@ -56,12 +56,14 @@ export default function LoginScreen({ navigation }) {
 
       if (userData && userData.email === email && userData.password === password) {
         await AsyncStorage.setItem('userToken', 'dummy-token');
-        await checkTasksForToday(); // Verificar tareas después de iniciar sesión
+        setModalVisible(false); // Ensure modal is closed
+        navigation.replace('Home'); // Navigate to Home screen
       } else {
         Alert.alert('Error', 'Correo o contraseña incorrectos');
       }
     } catch (error) {
       console.error('Error en inicio de sesión', error);
+      Alert.alert('Error', 'Ocurrió un problema al iniciar sesión');
     }
   };
 
