@@ -1,4 +1,4 @@
-// src/screens/TaskFormScreen.js
+// Este archivo contiene la pantalla para crear o editar tareas.
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, Platform, TouchableOpacity } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -6,20 +6,21 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import colors from '../../utils/colors';
 
 export default function TaskFormScreen({ navigation, route }) {
-  // Initialize with proper default values
+  // Verifica si se está editando una tarea existente o creando una nueva.
   const editingTask = route.params?.task || null;
 
-  const [name, setName] = useState(editingTask?.name || '');
-  const [category, setCategory] = useState(editingTask?.category || '');
-  const [team, setTeam] = useState(editingTask?.team || '');
-  const [dueDate, setDueDate] = useState(editingTask?.dueDate ? new Date(editingTask.dueDate) : new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const [manualInput, setManualInput] = useState(false);
-  const [manualDate, setManualDate] = useState('');
-  const [manualTime, setManualTime] = useState('');
+  // Estados para almacenar los detalles de la tarea.
+  const [name, setName] = useState(editingTask?.name || ''); // Nombre de la tarea.
+  const [category, setCategory] = useState(editingTask?.category || ''); // Categoría o materia de la tarea.
+  const [team, setTeam] = useState(editingTask?.team || ''); // Equipo asociado (opcional).
+  const [dueDate, setDueDate] = useState(editingTask?.dueDate ? new Date(editingTask.dueDate) : new Date()); // Fecha y hora de entrega.
+  const [showDatePicker, setShowDatePicker] = useState(false); // Controla la visibilidad del selector de fecha.
+  const [showTimePicker, setShowTimePicker] = useState(false); // Controla la visibilidad del selector de hora.
+  const [manualInput, setManualInput] = useState(false); // Alterna entre entrada manual y uso de pickers.
+  const [manualDate, setManualDate] = useState(''); // Fecha ingresada manualmente.
+  const [manualTime, setManualTime] = useState(''); // Hora ingresada manualmente.
 
-  // Initialize manual date/time when editing
+  // Precarga los campos de fecha y hora manual si se está editando una tarea.
   useEffect(() => {
     if (editingTask) {
       const dt = new Date(editingTask.dueDate);
@@ -33,49 +34,51 @@ export default function TaskFormScreen({ navigation, route }) {
     }
   }, [editingTask]);
 
+  // Maneja los cambios en el selector de fecha.
   const onChangeDate = (event, selectedDate) => {
     if (Platform.OS === 'android') {
-      setShowDatePicker(false);
-      if (event.type === 'dismissed') return;
+      setShowDatePicker(false); // Oculta el picker en Android después de seleccionar.
+      if (event.type === 'dismissed') return; // Salir si se cancela.
     }
 
     if (selectedDate) {
       const newDate = new Date(selectedDate);
-      // Preserve the existing time when changing just the date
-      newDate.setHours(dueDate.getHours(), dueDate.getMinutes());
+      newDate.setHours(dueDate.getHours(), dueDate.getMinutes()); // Preserva la hora existente.
       setDueDate(newDate);
-      if (Platform.OS === 'ios') setShowDatePicker(false);
+      if (Platform.OS === 'ios') setShowDatePicker(false); // Oculta el picker en iOS.
     }
   };
 
+  // Maneja los cambios en el selector de hora.
   const onChangeTime = (event, selectedTime) => {
     if (Platform.OS === 'android') {
-      setShowTimePicker(false);
-      if (event.type === 'dismissed') return;
+      setShowTimePicker(false); // Oculta el picker en Android después de seleccionar.
+      if (event.type === 'dismissed') return; // Salir si se cancela.
     }
 
     if (selectedTime) {
       const newDate = new Date(dueDate);
-      newDate.setHours(selectedTime.getHours(), selectedTime.getMinutes());
+      newDate.setHours(selectedTime.getHours(), selectedTime.getMinutes()); // Actualiza la hora preservando la fecha.
       setDueDate(newDate);
-      if (Platform.OS === 'ios') setShowTimePicker(false);
+      if (Platform.OS === 'ios') setShowTimePicker(false); // Oculta el picker en iOS.
     }
   };
 
+  // Alterna entre entrada manual y uso de pickers.
   const toggleManualInput = () => {
     setManualInput(!manualInput);
-    // Reset pickers when switching modes
-    setShowDatePicker(false);
+    setShowDatePicker(false); // Reinicia los pickers al cambiar de modo.
     setShowTimePicker(false);
   };
 
+  // Convierte las cadenas de fecha y hora ingresadas manualmente en un objeto Date.
   const parseManualDateTime = (dateStr, timeStr) => {
     try {
       const dateParts = dateStr.split('/');
       const timeParts = timeStr.split(':');
 
       if (dateParts.length !== 3 || timeParts.length !== 2) {
-        return null;
+        return null; // Formato inválido.
       }
 
       const day = parseInt(dateParts[0], 10);
@@ -87,7 +90,7 @@ export default function TaskFormScreen({ navigation, route }) {
       const parsedDate = new Date(year, month, day, hours, minutes);
 
       if (isNaN(parsedDate.getTime())) {
-        return null;
+        return null; // Fecha inválida.
       }
       return parsedDate;
     } catch (error) {
@@ -96,6 +99,7 @@ export default function TaskFormScreen({ navigation, route }) {
     }
   };
 
+  // Guarda la tarea en AsyncStorage.
   const saveTask = async () => {
     if (!name.trim() || !category.trim()) {
       Alert.alert('Error', 'Complete los campos obligatorios');
@@ -117,12 +121,14 @@ export default function TaskFormScreen({ navigation, route }) {
       let tasks = storedTasks ? JSON.parse(storedTasks) : [];
 
       if (editingTask) {
+        // Actualiza una tarea existente.
         tasks = tasks.map(task =>
           task.id === editingTask.id
             ? { ...task, name, category, team, dueDate: finalDate.toISOString() }
             : task
         );
       } else {
+        // Agrega una nueva tarea.
         tasks.push({
           id: Date.now(),
           name,
@@ -133,7 +139,7 @@ export default function TaskFormScreen({ navigation, route }) {
       }
 
       await AsyncStorage.setItem('tasks', JSON.stringify(tasks));
-      navigation.goBack();
+      navigation.goBack(); // Regresa a la pantalla anterior.
     } catch (error) {
       console.error('Error saving task:', error);
       Alert.alert('Error', 'No se pudo guardar la tarea');
@@ -142,6 +148,7 @@ export default function TaskFormScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
+      {/* Campos de entrada para los detalles de la tarea */}
       <Text style={styles.label}>Nombre de la Actividad *</Text>
       <TextInput
         style={styles.input}
@@ -166,6 +173,7 @@ export default function TaskFormScreen({ navigation, route }) {
         placeholder="Ingrese el equipo"
       />
 
+      {/* Alterna entre entrada manual y pickers */}
       <Text style={styles.label}>Fecha y Hora de Entrega *</Text>
       <TouchableOpacity onPress={toggleManualInput} style={styles.toggleButton}>
         <Text style={styles.toggleButtonText}>
@@ -174,6 +182,7 @@ export default function TaskFormScreen({ navigation, route }) {
       </TouchableOpacity>
 
       {manualInput ? (
+        // Campos de entrada manual
         <View>
           <TextInput
             style={styles.input}
@@ -191,6 +200,7 @@ export default function TaskFormScreen({ navigation, route }) {
           />
         </View>
       ) : (
+        // Botones para abrir los pickers
         <View>
           <TouchableOpacity
             onPress={() => setShowDatePicker(true)}
@@ -212,7 +222,7 @@ export default function TaskFormScreen({ navigation, route }) {
         </View>
       )}
 
-      {/* DateTimePickers rendered at root level */}
+      {/* Pickers de fecha y hora */}
       {showDatePicker && (
         <DateTimePicker
           value={dueDate}
@@ -232,6 +242,7 @@ export default function TaskFormScreen({ navigation, route }) {
         />
       )}
 
+      {/* Botón para guardar */}
       <View style={styles.buttonContainer}>
         <Button
           title={editingTask ? "Actualizar Actividad" : "Guardar Actividad"}
