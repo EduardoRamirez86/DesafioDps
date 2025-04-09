@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, FlatList, Image, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { Video } from 'expo-av';
+import { useNavigation } from '@react-navigation/native';
 
 const Gallery = ({ capturedMedia, setCapturedMedia }) => {
     const [selectedMedia, setSelectedMedia] = useState(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editedAnnotation, setEditedAnnotation] = useState("");
+    const navigation = useNavigation();
 
     const handleEditAnnotation = (media) => {
         setSelectedMedia(media);
@@ -60,6 +62,14 @@ const Gallery = ({ capturedMedia, setCapturedMedia }) => {
                         ? `Lat: ${item.location.latitude}, Lng: ${item.location.longitude}`
                         : "Sin ubicación"}
                 </Text>
+                {item.location && (
+                    <TouchableOpacity
+                        style={styles.mapButton}
+                        onPress={() => navigation.navigate('Mapa', { location: item.location })}
+                    >
+                        <Text style={styles.mapButtonText}>Ver en Mapa</Text>
+                    </TouchableOpacity>
+                )}
                 <TouchableOpacity onPress={() => handleDeleteMedia(item.id)}>
                     <Text style={styles.deleteText}>🗑 Eliminar</Text>
                 </TouchableOpacity>
@@ -159,6 +169,17 @@ const styles = StyleSheet.create({
     deleteText: {
         fontSize: 14,
         color: 'red',
+        fontWeight: 'bold',
+    },
+    mapButton: {
+        backgroundColor: '#4CAF50',
+        padding: 10,
+        borderRadius: 5,
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    mapButtonText: {
+        color: '#fff',
         fontWeight: 'bold',
     },
     modalContainer: {
