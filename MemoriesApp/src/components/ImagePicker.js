@@ -1,21 +1,22 @@
-import { StyleSheet, Text, View, Image, Dimensions, TouchableOpacity, Alert } from 'react-native'
-import React, { useState } from 'react'
+import { StyleSheet, Text, View, Image, Dimensions, TouchableOpacity, Alert } from 'react-native';
+import React, { useState } from 'react';
 import { AntDesign } from '@expo/vector-icons';
 import * as ImagePickerExpo from 'expo-image-picker';
+import * as LocationExpo from 'expo-location';
 
-const { height, width } = Dimensions.get("window")
+const { height, width } = Dimensions.get("window");
 
 const ImagePicker = () => {
-
-    const [image, setImage] = useState("")
-    const [confirm, setConfirm] = useState(false)
+    const [image, setImage] = useState("");
+    const [location, setLocation] = useState(null);
+    const [confirm, setConfirm] = useState(false);
 
     const handlePickImage = async () => {
-        const { status } = await ImagePickerExpo.requestCameraPermissionsAsync()
+        const { status } = await ImagePickerExpo.requestCameraPermissionsAsync();
 
         if (status !== "granted") {
-            Alert.alert("El permiso para acceder a la camara fue denegado")
-            return
+            Alert.alert("El permiso para acceder a la cámara fue denegado");
+            return;
         }
 
         let result = await ImagePickerExpo.launchCameraAsync({
@@ -27,36 +28,55 @@ const ImagePicker = () => {
 
         if (!result.canceled) {
             setImage(result.assets[0].uri);
-            setConfirm(true)
+            await handleGetLocation(); // Obtiene las coordenadas al capturar la imagen o video
+            setConfirm(true);
         }
-    }
+    };
+
+    const handleGetLocation = async () => {
+        let { status } = await LocationExpo.requestForegroundPermissionsAsync();
+
+        if (status !== 'granted') {
+            Alert.alert("El permiso para acceder a la ubicación fue denegado");
+            return;
+        }
+
+        let location = await LocationExpo.getCurrentPositionAsync({});
+        setLocation({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+        });
+    };
 
     const handleSubmitImage = () => {
-        // Guardar en base de datos
-        Alert.alert("Image Subida")
-        setConfirm(false)
-    }
+        // Guardar en base de datos la imagen/video junto con las coordenadas
+        Alert.alert("Imagen/Video Subido", `Coordenadas: ${location.latitude}, ${location.longitude}`);
+        setConfirm(false);
+    };
 
     return (
         <View style={styles.container}>
             <View style={styles.containerImg}>
-                <Image style={styles.img} source={image ? { uri: image } : { uri: "https://i.ibb.co/yXZXXJ1/user-login-icon-14.png" }} />
+                <Image
+                    style={styles.img}
+                    source={image ? { uri: image } : { uri: "https://i.ibb.co/yXZXXJ1/user-login-icon-14.png" }}
+                />
                 <View style={styles.containerBtn}>
                     <TouchableOpacity style={styles.btnCamara} onPress={handlePickImage}>
                         <AntDesign name="camera" size={40} color="black" />
                     </TouchableOpacity>
                 </View>
             </View>
-            {confirm && <TouchableOpacity style={styles.btnConfirm} onPress={handleSubmitImage}>
-                <Text style={styles.text}>Guardar Foto</Text>
-            </TouchableOpacity>
-
-            }
+            {confirm && (
+                <TouchableOpacity style={styles.btnConfirm} onPress={handleSubmitImage}>
+                    <Text style={styles.text}>Guardar Foto/Video</Text>
+                </TouchableOpacity>
+            )}
         </View>
-    )
-}
+    );
+};
 
-export default ImagePicker
+export default ImagePicker;
 
 const styles = StyleSheet.create({
     container: {
@@ -67,18 +87,18 @@ const styles = StyleSheet.create({
     containerImg: {
         borderWidth: 1,
         borderRadius: height * 0.5,
-        backgroundColor: "#ffffff"
+        backgroundColor: "#ffffff",
     },
     img: {
         height: height * 0.3,
         width: height * 0.3,
         borderRadius: height * 0.5,
-        resizeMode: 'center'
+        resizeMode: 'center',
     },
     containerBtn: {
         position: 'absolute',
         bottom: width * 0.01,
-        right: width * 0.01
+        right: width * 0.01,
     },
     btnCamara: {
         backgroundColor: "#ffffff",
@@ -93,11 +113,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 20,
-        borderRadius: 3
+        borderRadius: 3,
     },
     text: {
         fontWeight: 'bold',
         color: "#ffffff",
-        fontSize: 16
+        fontSize: 16,
     },
-})
+});
