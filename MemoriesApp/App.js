@@ -11,6 +11,7 @@ const Tab = createBottomTabNavigator();
 
 const App = () => {
     const [capturedMedia, setCapturedMedia] = useState([]);
+    const [selectedLocation, setSelectedLocation] = useState(null); // Track selected location
 
     useEffect(() => {
         const loadMedia = async () => {
@@ -51,11 +52,15 @@ const App = () => {
                     {() => <Home onMediaCaptured={handleMediaCaptured} />}
                 </Tab.Screen>
                 <Tab.Screen name="Lista de Archivos">
-                    {() => <Gallery capturedMedia={capturedMedia} setCapturedMedia={setCapturedMedia} />}
+                    {() => (
+                        <Gallery
+                            capturedMedia={capturedMedia}
+                            setCapturedMedia={setCapturedMedia}
+                            onLocationSelect={setSelectedLocation} // Pass location selection handler
+                        />
+                    )}
                 </Tab.Screen>
-                <Tab.Screen name="Mapa">
-                    {() => <MapScreen capturedMedia={capturedMedia} />}
-                </Tab.Screen>
+                <Tab.Screen name="Mapa" children={() => <MapScreen location={selectedLocation} />} />
             </Tab.Navigator>
         </NavigationContainer>
     );

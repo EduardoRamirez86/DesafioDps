@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, FlatList, Image, TouchableOpacity, Modal, TextI
 import { Video } from 'expo-av';
 import { useNavigation } from '@react-navigation/native';
 
-const Gallery = ({ capturedMedia, setCapturedMedia }) => {
+const Gallery = ({ capturedMedia, setCapturedMedia, onLocationSelect }) => {
     const [selectedMedia, setSelectedMedia] = useState(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editedAnnotation, setEditedAnnotation] = useState("");
@@ -42,19 +42,17 @@ const Gallery = ({ capturedMedia, setCapturedMedia }) => {
 
     const renderItem = ({ item }) => (
         <View style={styles.card}>
-            <TouchableOpacity onPress={() => handleEditAnnotation(item)}>
-                {item.type === "video" ? (
-                    <Video
-                        source={{ uri: item.uri }}
-                        style={styles.media}
-                        useNativeControls
-                        resizeMode="cover"
-                        isLooping
-                    />
-                ) : (
-                    <Image source={{ uri: item.uri }} style={styles.media} />
-                )}
-            </TouchableOpacity>
+            {item.type === "video" ? (
+                <Video
+                    source={{ uri: item.uri }}
+                    style={styles.media}
+                    useNativeControls
+                    resizeMode="cover"
+                    isLooping
+                />
+            ) : (
+                <Image source={{ uri: item.uri }} style={styles.media} />
+            )}
             <View style={styles.infoContainer}>
                 <Text style={styles.annotation}>{item.annotation || "Sin anotación"}</Text>
                 <Text style={styles.location}>
@@ -65,7 +63,7 @@ const Gallery = ({ capturedMedia, setCapturedMedia }) => {
                 {item.location && (
                     <TouchableOpacity
                         style={styles.mapButton}
-                        onPress={() => navigation.navigate('Mapa', { location: item.location })}
+                        onPress={() => onLocationSelect(item.location)}
                     >
                         <Text style={styles.mapButtonText}>Ver en Mapa</Text>
                     </TouchableOpacity>
